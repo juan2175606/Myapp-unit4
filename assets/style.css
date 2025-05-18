@@ -1,0 +1,103 @@
+/* General styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7fc; /* Fondo claro para una sensación limpia */
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+h1, h3 {
+    color: #2c3e50;
+    text-align: center;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+/* Contenedores generales */
+.graph-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.graph-container .dcc-graph {
+    width: 48%;
+    margin-bottom: 30px;
+}
+
+.card {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 15px;
+}
+
+/* Mejora de tablas */
+table {
+    width: 100%;
+    margin-top: 30px;
+    border-collapse: collapse;
+}
+
+table th, table td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+table th {
+    background-color: #3498db;
+    color: white;
+    font-size: 16px;
+}
+
+table td {
+    font-size: 14px;
+}
+
+table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Mejora para el header */
+h1 {
+    font-size: 36px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* Mejorar los botones y elementos interactivos */
+button, .dcc-dropdown, .dcc-slider {
+    font-size: 16px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+}
+
+button:hover, .dcc-dropdown:hover, .dcc-slider:hover {
+    background-color: #2980b9;
+    cursor: pointer;
+}
+
+/* Mejorar los gráficos para darles un mejor contorno y separación */
+.dcc-graph {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Diseño responsivo */
+@media screen and (max-width: 768px) {
+    .graph-container .dcc-graph {
+        width: 100%;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+}
