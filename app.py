@@ -35,7 +35,6 @@ df_muertes = pd.read_excel(os.path.join(ruta_datos, "Anexo1.NoFetal2019_CE_15-03
 df_codigos_muerte = pd.read_excel(os.path.join(ruta_datos, "Anexo2.CodigosDeMuerte_CE_15-03-23.xlsx"), skiprows=8)
 df_divipola = pd.read_excel(os.path.join(ruta_datos, "Anexo3.Divipola_CE_15-03-23.xlsx"))
 
-
 # Asegurar tipos
 df_muertes['AÑO'] = pd.to_numeric(df_muertes['AÑO'], errors='coerce')
 df_muertes['MES'] = pd.to_numeric(df_muertes['MES'], errors='coerce')
@@ -63,24 +62,6 @@ fig_barras = px.bar(
     labels={"MUNICIPIO": "Ciudad", "TOTAL_HOMICIDIOS": "Total Homicidios"},
     color="TOTAL_HOMICIDIOS",
     color_continuous_scale="Reds"
-)
-fig_barras.update_layout(
-    title="Las 5 ciudades más violentas de Colombia (Homicidios - X95)",
-    title_font=dict(size=24, family="Verdana, sans-serif", color="rgb(44, 62, 80)"),
-    title_x=0.5,
-    plot_bgcolor="white",
-    paper_bgcolor="rgb(240, 247, 253)",
-    font=dict(color="rgb(44, 62, 80)"),
-    margin=dict(t=50, b=50, l=50, r=50)
-)
-fig_barras.update_xaxes(
-    title="Ciudad",
-    title_font=dict(size=16, family="Verdana, sans-serif"),
-    tickangle=-45
-)
-fig_barras.update_yaxes(
-    title="Total Homicidios",
-    title_font=dict(size=16, family="Verdana, sans-serif")
 )
 
 # Muertes por departamento
@@ -112,15 +93,6 @@ fig_lineas = px.line(
     y="TOTAL_MUERTES",
     title="Total de muertes por mes en Colombia (2019)",
     labels={"FECHA": "Mes", "TOTAL_MUERTES": "Total de Muertes"}
-)
-fig_lineas.update_layout(
-    title="Total de muertes por mes en Colombia (2019)",
-    title_font=dict(size=24, family="Verdana, sans-serif", color="rgb(44, 62, 80)"),
-    title_x=0.5,
-    plot_bgcolor="white",
-    paper_bgcolor="rgb(240, 247, 253)",
-    font=dict(color="rgb(44, 62, 80)"),
-    margin=dict(t=50, b=50, l=50, r=50)
 )
 
 # Tabla: 10 principales causas de muerte
@@ -165,24 +137,6 @@ fig_barras_sexo = px.bar(
     labels={"DEPARTAMENTO": "Departamento", "TOTAL_MUERTES": "Total de Muertes", "SEXO": "Sexo"},
     color_discrete_map={"M": "blue", "F": "red"}
 )
-fig_barras_sexo.update_layout(
-    title="Comparación del total de muertes por sexo en cada departamento",
-    title_font=dict(size=24, family="Verdana, sans-serif", color="rgb(44, 62, 80)"),
-    title_x=0.5,
-    plot_bgcolor="white",
-    paper_bgcolor="rgb(240, 247, 253)",
-    font=dict(color="rgb(44, 62, 80)"),
-    margin=dict(t=50, b=50, l=50, r=50)
-)
-fig_barras_sexo.update_xaxes(
-    title="Departamento",
-    title_font=dict(size=16, family="Verdana, sans-serif"),
-    tickangle=-45
-)
-fig_barras_sexo.update_yaxes(
-    title="Total de Muertes",
-    title_font=dict(size=16, family="Verdana, sans-serif")
-)
 
 # Histograma por rangos de edad
 bins = [0, 4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 59, 64, 69, 74, 79, 84, 89, 150]
@@ -203,12 +157,10 @@ fig_histograma = px.bar(
     color_continuous_scale="Blues"
 )
 
-# App Dash
-app = Dash(__name__)
-
+# Layout de la aplicación Dash
 app.layout = html.Div([
     html.H1("Análisis de muertes en Colombia - 2019", style={'textAlign': 'center'}),
-    
+
     html.Div([
         dcc.Graph(figure=fig_map, className='dcc-graph'),
         dcc.Graph(figure=fig_lineas, className='dcc-graph'),
@@ -224,9 +176,7 @@ app.layout = html.Div([
         dcc.Graph(figure=fig_histograma, className='dcc-graph'),
     ], className='graph-container'),
 
-    html.Div([
-        dcc.Graph(figure=fig_barras_sexo, className='dcc-graph')  # Última gráfica añadida
-    ], className='graph-container'),
+    html.Div([dcc.Graph(figure=fig_barras_sexo, className='dcc-graph')], className='graph-container'),
 
     html.H3("10 Principales Causas de Muerte", style={'textAlign': 'center'}),
     DataTable(
@@ -240,5 +190,6 @@ app.layout = html.Div([
     ),
 ])
 
-
 # No pongas if __name__ == '__main__' para despliegues con Gunicorn
+
+
