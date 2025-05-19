@@ -7,73 +7,47 @@ import os
 
 # Inicializar la aplicación Dash
 app = Dash(__name__)
+server = app.server  # Necesario para gunicorn en producción
 
 # Información adicional
 materia = "Aplicaciones 1, Universidad de La Salle, 2025"
 nombre_estudiante = "Juan Andrés López Cubides"
 
-# Rutas
-ruta_base = "F:/MasterIA/Semestre 1/Aplicaciones 1/Unidad 4/app_unidad4/"
-ruta_datos = ruta_base + "data/"
-ruta_geojson = ruta_base + "co_2018_MGN_DPTO_POLITICO.geojson"
+# Rutas relativas
+ruta_base = os.path.dirname(os.path.abspath(__file__))
+ruta_datos = os.path.join(ruta_base, "data")
+ruta_geojson = os.path.join(ruta_datos, "co_2018_MGN_DPTO_POLITICO.geojson")
 
 # Cargar archivos
-df_muertes = pd.read_excel(ruta_datos + "Anexo1.NoFetal2019_CE_15-03-23.xlsx")
-df_codigos_muerte = pd.read_excel(ruta_datos + "Anexo2.CodigosDeMuerte_CE_15-03-23.xlsx", skiprows=8)
-df_divipola = pd.read_excel(ruta_datos + "Anexo3.Divipola_CE_15-03-23.xlsx")
+df_muertes = pd.read_excel(os.path.join(ruta_datos, "Anexo1.NoFetal2019_CE_15-03-23.xlsx"))
+df_codigos_muerte = pd.read_excel(os.path.join(ruta_datos, "Anexo2.CodigosDeMuerte_CE_15-03-23.xlsx"), skiprows=8)
+df_divipola = pd.read_excel(os.path.join(ruta_datos, "Anexo3.Divipola_CE_15-03-23.xlsx"))
 
-# Asegurar tipos
+# Preprocesamiento
 df_muertes['AÑO'] = pd.to_numeric(df_muertes['AÑO'], errors='coerce')
 df_muertes['MES'] = pd.to_numeric(df_muertes['MES'], errors='coerce')
 df_muertes = df_muertes.dropna(subset=['AÑO', 'MES'])
-
-# Crear fecha
-df_muertes["FECHA"] = pd.to_datetime(df_muertes['AÑO'].astype(str) + '-' + df_muertes['MES'].astype(str) + '-01', errors='coerce')
-
-# Limpieza códigos
+df_muertes["FECHA"] = pd.to_datetime(df_muertes['AÑO'].astype(int).astype(str) + '-' + df_muertes['MES'].astype(int).astype(str) + '-01')
 df_muertes['COD_MUERTE'] = df_muertes['COD_MUERTE'].str.strip()
 
-# Homicidios
+# Homicidios y top 5 ciudades más violentas
 homicidios = df_muertes[df_muertes['COD_MUERTE'].str.startswith('X95', na=False)]
 homicidios_municipio_codigo = homicidios.groupby(["COD_MUNICIPIO", "COD_MUERTE"]).size().reset_index(name="TOTAL_HOMICIDIOS")
 df_municipios = pd.merge(homicidios_municipio_codigo, df_divipola[["COD_MUNICIPIO", "MUNICIPIO"]].drop_duplicates(), on="COD_MUNICIPIO")
 homicidios_por_ciudad = df_municipios.groupby("MUNICIPIO")["TOTAL_HOMICIDIOS"].sum().reset_index()
 top_5_ciudades = homicidios_por_ciudad.nlargest(5, "TOTAL_HOMICIDIOS")
 
-# Gráfico barras
 fig_barras = px.bar(
-    top_5_ciudades,
-    x="MUNICIPIO",
-    y="TOTAL_HOMICIDIOS",
+    top_5_ciudades, x="MUNICIPIO", y="TOTAL_HOMICIDIOS",
     title="Las 5 ciudades más violentas de Colombia (Homicidios - X95)",
     labels={"MUNICIPIO": "Ciudad", "TOTAL_HOMICIDIOS": "Total Homicidios"},
-    color="TOTAL_HOMICIDIOS",
-    color_continuous_scale="Reds"
-)
-fig_barras.update_layout(
-    title="Las 5 ciudades más violentas de Colombia (Homicidios - X95)",
-    title_font=dict(size=24, family="Verdana, sans-serif", color="rgb(44, 62, 80)"),
-    title_x=0.5,
-    plot_bgcolor="white",
-    paper_bgcolor="rgb(240, 247, 253)",
-    font=dict(color="rgb(44, 62, 80)"),
-    margin=dict(t=50, b=50, l=50, r=50)
-)
-fig_barras.update_xaxes(
-    title="Ciudad",
-    title_font=dict(size=16, family="Verdana, sans-serif"),
-    tickangle=-45
-)
-fig_barras.update_yaxes(
-    title="Total Homicidios",
-    title_font=dict(size=16, family="Verdana, sans-serif")
+    color="TOTAL_HOMICIDIOS", color_continuous_scale="Reds"
 )
 
-# Muertes por departamento
+# Muertes por departamento (mapa)
 muertes_departamento = df_muertes.groupby("COD_DEPARTAMENTO").size().reset_index(name="TOTAL_MUERTES")
 df_departamento = pd.merge(muertes_departamento, df_divipola[["COD_DEPARTAMENTO", "DEPARTAMENTO"]].drop_duplicates(), on="COD_DEPARTAMENTO")
 
-# Mapa coropletas
 with open(ruta_geojson, encoding="utf-8") as f:
     geojson = json.load(f)
 
@@ -88,10 +62,8 @@ fig_map = px.choropleth(
 )
 fig_map.update_geos(fitbounds="locations", visible=False)
 
-# Línea tiempo de muertes por mes
+# Línea de tiempo de muertes por mes
 muertes_por_mes = df_muertes.groupby("FECHA").size().reset_index(name="TOTAL_MUERTES")
-muertes_por_mes = muertes_por_mes.sort_values("FECHA")
-
 fig_lineas = px.line(
     muertes_por_mes,
     x="FECHA",
@@ -100,45 +72,18 @@ fig_lineas = px.line(
     labels={"FECHA": "Mes", "TOTAL_MUERTES": "Total de Muertes"}
 )
 
-# Aseguramos que se muestren los 12 meses en el eje X
-fig_lineas.update_layout(
-    title="Total de muertes por mes en Colombia (2019)",
-    title_font=dict(size=24, family="Verdana, sans-serif", color="rgb(44, 62, 80)"),
-    title_x=0.5,
-    plot_bgcolor="white",
-    paper_bgcolor="rgb(240, 247, 253)",
-    font=dict(color="rgb(44, 62, 80)"),
-    margin=dict(t=50, b=50, l=50, r=50),
-    xaxis=dict(
-        tickmode='array',
-        tickvals=pd.date_range(start="2019-01-01", end="2019-12-01", freq='MS'),
-        ticktext=["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
-        title="Mes"
-    ),
-)
-
-fig_lineas.update_yaxes(
-    title="Total de Muertes",
-    title_font=dict(size=16, family="Verdana, sans-serif")
-)
-
-fig_lineas.update_xaxes(
-    tickangle=-45,
-)
-
 # Tabla: 10 principales causas de muerte
 top_10_causas = df_muertes.groupby("COD_MUERTE").size().reset_index(name="TOTAL_CASOS")
 top_10_causas = pd.merge(
     top_10_causas,
-    df_codigos_muerte[["Código de la CIE-10 cuatro caracteres", "Descripcion  de códigos mortalidad a cuatro caracteres"]].drop_duplicates(),
+    df_codigos_muerte[["Código de la CIE-10 cuatro caracteres", "Descripcion  de códigos mortalidad a cuatro caracteres"]],
     left_on="COD_MUERTE",
     right_on="Código de la CIE-10 cuatro caracteres",
     how="left"
 )
 top_10_causas = top_10_causas.nlargest(10, "TOTAL_CASOS")
 
-# Gráfico circular ciudades menos mortalidad
+# Ciudades y departamentos con menos homicidios
 bottom_10_ciudades = homicidios_por_ciudad.nsmallest(10, "TOTAL_HOMICIDIOS")
 fig_bottom_10_ciudades = px.pie(
     bottom_10_ciudades,
@@ -147,7 +92,6 @@ fig_bottom_10_ciudades = px.pie(
     title="10 Ciudades con Menor Mortalidad en Colombia"
 )
 
-# Gráfico circular departamentos menos mortalidad
 bottom_10_departamentos = df_departamento.nsmallest(10, "TOTAL_MUERTES")
 fig_bottom_10_departamentos = px.pie(
     bottom_10_departamentos,
@@ -156,7 +100,7 @@ fig_bottom_10_departamentos = px.pie(
     title="10 Departamentos con Menor Mortalidad en Colombia"
 )
 
-# Gráfico de barras apiladas por género en departamentos
+# Barras apiladas por sexo
 df_sexos = df_muertes.groupby(['COD_DEPARTAMENTO', 'SEXO']).size().reset_index(name='TOTAL_MUERTES')
 df_sexos = pd.merge(df_sexos, df_divipola[['COD_DEPARTAMENTO', 'DEPARTAMENTO']].drop_duplicates(), on="COD_DEPARTAMENTO")
 
@@ -169,26 +113,8 @@ fig_barras_sexo = px.bar(
     labels={"DEPARTAMENTO": "Departamento", "TOTAL_MUERTES": "Total de Muertes", "SEXO": "Sexo"},
     color_discrete_map={"M": "blue", "F": "red"}
 )
-fig_barras_sexo.update_layout(
-    title="Comparación del total de muertes por sexo en cada departamento",
-    title_font=dict(size=24, family="Verdana, sans-serif", color="rgb(44, 62, 80)"),
-    title_x=0.5,
-    plot_bgcolor="white",
-    paper_bgcolor="rgb(240, 247, 253)",
-    font=dict(color="rgb(44, 62, 80)"),
-    margin=dict(t=50, b=50, l=50, r=50)
-)
-fig_barras_sexo.update_xaxes(
-    title="Departamento",
-    title_font=dict(size=16, family="Verdana, sans-serif"),
-    tickangle=-45
-)
-fig_barras_sexo.update_yaxes(
-    title="Total de Muertes",
-    title_font=dict(size=16, family="Verdana, sans-serif")
-)
 
-# Histograma por rangos de edad
+# Histograma por edades
 bins = [0, 4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 59, 64, 69, 74, 79, 84, 89, 150]
 labels = ['0-4', '5-9', '10-14', '15-19', '20-24', '25-29', '30-34', '35-39',
           '40-44', '45-49', '50-54', '55-59', '60-64', '65-69', '70-74',
@@ -207,30 +133,16 @@ fig_histograma = px.bar(
     color_continuous_scale="Blues"
 )
 
-# App layout
+# Layout
 app.layout = html.Div([
     html.H1("Análisis de muertes en Colombia - 2019", style={'textAlign': 'center'}),
     html.H3(materia, style={'textAlign': 'center'}),
     html.H4(f"Desarrollado por: {nombre_estudiante}", style={'textAlign': 'center'}),
 
-    html.Div([
-        dcc.Graph(figure=fig_map, className='dcc-graph'),
-        dcc.Graph(figure=fig_lineas, className='dcc-graph'),
-    ], className='graph-container'),
-
-    html.Div([
-        dcc.Graph(figure=fig_barras, className='dcc-graph'),
-        dcc.Graph(figure=fig_bottom_10_ciudades, className='dcc-graph'),
-    ], className='graph-container'),
-
-    html.Div([
-        dcc.Graph(figure=fig_bottom_10_departamentos, className='dcc-graph'),
-        dcc.Graph(figure=fig_histograma, className='dcc-graph'),
-    ], className='graph-container'),
-
-    html.Div([
-        dcc.Graph(figure=fig_barras_sexo, className='dcc-graph')  # Última gráfica añadida
-    ], className='graph-container'),
+    html.Div([dcc.Graph(figure=fig_map), dcc.Graph(figure=fig_lineas)]),
+    html.Div([dcc.Graph(figure=fig_barras), dcc.Graph(figure=fig_bottom_10_ciudades)]),
+    html.Div([dcc.Graph(figure=fig_bottom_10_departamentos), dcc.Graph(figure=fig_histograma)]),
+    html.Div([dcc.Graph(figure=fig_barras_sexo)]),
 
     html.H3("10 Principales Causas de Muerte", style={'textAlign': 'center'}),
     DataTable(
@@ -244,5 +156,4 @@ app.layout = html.Div([
     ),
 ])
 
-server = app.server  # esto expone el objeto para gunicorn
-
+# No pongas if __name__ == '__main__' para despliegues con Gunicorn
