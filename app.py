@@ -242,6 +242,3 @@ app.layout = html.Div([
 
 
 # No pongas if __name__ == '__main__' para despliegues con Gunicorn
-
-if __name__ == "__main__":
-    app.run(debug=False, port=8051)
