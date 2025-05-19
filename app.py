@@ -244,5 +244,3 @@ app.layout = html.Div([
     ),
 ])
 
-if __name__ == "__main__":
-    app.run(debug=False, port=port, host="0.0.0.0")
