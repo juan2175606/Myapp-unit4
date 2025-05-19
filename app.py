@@ -83,10 +83,11 @@ fig_map = px.choropleth(
 )
 fig_map.update_geos(fitbounds="locations", visible=False)
 
-# Línea tiempo
+# Agrupar por fecha
 muertes_por_mes = df_muertes.groupby("FECHA").size().reset_index(name="TOTAL_MUERTES")
 muertes_por_mes = muertes_por_mes.sort_values("FECHA")
 
+# Crear la figura
 fig_lineas = px.line(
     muertes_por_mes,
     x="FECHA",
@@ -95,8 +96,17 @@ fig_lineas = px.line(
     labels={"FECHA": "Mes", "TOTAL_MUERTES": "Total de Muertes"}
 )
 
-# Tabla: 10 principales causas de muerte
+# Ajustar el formato de la fecha en el eje x
+fig_lineas.update_xaxes(
+    dtick="M1",  # Establecer la frecuencia de los ticks (cada mes)
+    tickformat="%b %Y",  # Formato: "Ene 2019"
+    tickangle=45  # Rotar las etiquetas para evitar solapamientos
+)
+
+# Agrupar las causas de muerte
 top_10_causas = df_muertes.groupby("COD_MUERTE").size().reset_index(name="TOTAL_CASOS")
+
+# Realizar tabla
 top_10_causas = pd.merge(
     top_10_causas,
     df_codigos_muerte[["Código de la CIE-10 cuatro caracteres", "Descripcion  de códigos mortalidad a cuatro caracteres"]].drop_duplicates(),
@@ -104,25 +114,43 @@ top_10_causas = pd.merge(
     right_on="Código de la CIE-10 cuatro caracteres",
     how="left"
 )
+
+# Eliminar filas vacías si hay alguna
+top_10_causas = top_10_causas.dropna(subset=["Descripcion  de códigos mortalidad a cuatro caracteres"])
+
+# Mostrar las 10 principales causas
 top_10_causas = top_10_causas.nlargest(10, "TOTAL_CASOS")
 
-# Gráfico circular ciudades menos mortalidad
-bottom_10_ciudades = homicidios_por_ciudad.nsmallest(10, "TOTAL_HOMICIDIOS")
-fig_bottom_10_ciudades = px.pie(
-    bottom_10_ciudades,
+
+# Gráfico circular municipios con menor mortalidad total
+muertes_municipio = df_muertes.groupby("COD_MUNICIPIO").size().reset_index(name="TOTAL_MUERTES")
+muertes_municipio = pd.merge(
+    muertes_municipio,
+    df_divipola[["COD_MUNICIPIO", "MUNICIPIO"]].drop_duplicates(),
+    on="COD_MUNICIPIO"
+)
+bottom_10_municipios = muertes_municipio.nsmallest(10, "TOTAL_MUERTES")
+
+fig_bottom_10_municipios = px.pie(
+    bottom_10_municipios,
     names="MUNICIPIO",
-    values="TOTAL_HOMICIDIOS",
-    title="10 Ciudades con Menor Mortalidad en Colombia"
+    values="TOTAL_MUERTES",
+    title="10 Municipios con Menor Mortalidad Total en Colombia (2019)",
+    labels={"MUNICIPIO": "Municipio", "TOTAL_MUERTES": "Total de Muertes"}
 )
 
-# Gráfico circular departamentos menos mortalidad
+# Gráfico circular departamentos con menor mortalidad total
 bottom_10_departamentos = df_departamento.nsmallest(10, "TOTAL_MUERTES")
+
 fig_bottom_10_departamentos = px.pie(
     bottom_10_departamentos,
     names="DEPARTAMENTO",
     values="TOTAL_MUERTES",
-    title="10 Departamentos con Menor Mortalidad en Colombia"
+    title="10 Departamentos con Menor Mortalidad Total en Colombia (2019)",
+    labels={"DEPARTAMENTO": "Departamento", "TOTAL_MUERTES": "Total de Muertes"}
 )
+
+
 
 # Gráfico de barras apiladas por género en departamentos
 df_sexos = df_muertes.groupby(['COD_DEPARTAMENTO', 'SEXO']).size().reset_index(name='TOTAL_MUERTES')
@@ -173,7 +201,7 @@ app.layout = html.Div([
 
     html.Div([
         dcc.Graph(figure=fig_barras, className='dcc-graph'),
-        dcc.Graph(figure=fig_bottom_10_ciudades, className='dcc-graph'),
+        dcc.Graph(figure=fig_bottom_10_municipios, className='dcc-graph'),
     ], className='graph-container'),
 
     html.Div([
@@ -196,5 +224,5 @@ app.layout = html.Div([
 ])
 
 # No pongas if __name__ == '__main__' para despliegues con Gunicorn
-
-
+# if __name__ == "__main__":
+#     app.run(debug=False, port=8051)
