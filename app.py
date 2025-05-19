@@ -212,7 +212,7 @@ app.layout = html.Div([
     html.H1("Análisis de muertes en Colombia - 2019", style={'textAlign': 'center'}),
     html.H3(materia, style={'textAlign': 'center'}),
     html.H4(f"Desarrollado por: {nombre_estudiante}", style={'textAlign': 'center'}),
-    
+
     html.Div([
         dcc.Graph(figure=fig_map, className='dcc-graph'),
         dcc.Graph(figure=fig_lineas, className='dcc-graph'),
@@ -248,3 +248,4 @@ if __name__ == "__main__":
     # Obtener el puerto desde la variable de entorno PORT
     port = int(os.environ.get('PORT', 8051))  # Usa 8051 si no se encuentra el valor de la variable de entorno PORT
     app.run(debug=False, port=port, host="0.0.0.0")  # Usa 0.0.0.0 para hacer que la app sea accesible desde el exterior
+
