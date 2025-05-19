@@ -152,13 +152,18 @@ fig_histograma = px.bar(
     x="RANGO_EDAD",
     y="TOTAL_MUERTES",
     title="Distribución de Muertes por Rangos de Edad (2019)",
-    labels={"RANGO_EDAD": "Rango de Edad", "TOTAL_MUERTES": "Total de Muertes"},
-    color="TOTAL_MUERTES",
-    color_continuous_scale="Blues"
+    labels={"RANGO_EDAD": "Rango de Edad", "TOTAL_MUERTES": "Total Muertes"}
 )
 
 # Layout de la aplicación Dash
 app.layout = html.Div([
+    # Información del estudiante y universidad
+    html.Div([
+        html.H2(f"Estudiante: {nombre_estudiante}", style={'textAlign': 'center', 'marginTop': '20px'}),
+        html.H3(f"Materia: {materia}", style={'textAlign': 'center'}),
+        html.Hr(),
+    ], style={'marginBottom': '30px'}),
+
     html.H1("Análisis de muertes en Colombia - 2019", style={'textAlign': 'center'}),
 
     html.Div([
