@@ -3,6 +3,10 @@ import plotly.express as px
 from dash import Dash, html, dcc
 from dash.dash_table import DataTable
 import json
+import os
+
+# Inicializar la aplicación Dash
+app = Dash(__name__)
 
 # Información adicional
 materia = "Aplicaciones 1, Universidad de La Salle, 2025"
@@ -203,9 +207,7 @@ fig_histograma = px.bar(
     color_continuous_scale="Blues"
 )
 
-# App Dash
-app = Dash(__name__)
-
+# App layout
 app.layout = html.Div([
     html.H1("Análisis de muertes en Colombia - 2019", style={'textAlign': 'center'}),
     html.H3(materia, style={'textAlign': 'center'}),
@@ -241,8 +243,6 @@ app.layout = html.Div([
         style_table={'height': '300px', 'overflowY': 'auto'},
     ),
 ])
-
-import os
 
 if __name__ == "__main__":
     # Obtener el puerto desde la variable de entorno PORT
