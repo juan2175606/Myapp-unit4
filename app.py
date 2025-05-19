@@ -244,3 +244,5 @@ app.layout = html.Div([
     ),
 ])
 
+server = app.server  # esto expone el objeto para gunicorn
+
